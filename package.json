@@ -1,0 +1,26 @@
+{
+  "name": "bingfan",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LitoMore/bingfan.git"
+  },
+  "author": "LitoMore",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LitoMore/bingfan/issues"
+  },
+  "homepage": "https://github.com/LitoMore/bingfan#readme",
+  "dependencies": {
+    "async": "^2.1.4",
+    "oauth": "^0.9.15",
+    "oauth-signature": "^1.3.1",
+    "request": "^2.79.0",
+    "upyun": "^2.0.4"
+  }
+}

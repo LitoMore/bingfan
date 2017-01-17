@@ -1,0 +1,11 @@
+{
+  "upyun_bucket_name": "bucket_name",
+  "upyun_operator_name": "operator_name",
+  "upyun_operator_pwd": "operator_pwd",
+  "local_path": "/images/",
+  "upyun_path": "/node_images/",
+  "CONSUMER_KEY": "",
+  "CONSUMER_SECRET": "",
+  "OAUTH_TOKEN": "",
+  "OAUTH_TOKEN_SECRET": ""
+}
