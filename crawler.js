@@ -6,6 +6,14 @@ const async = require('async');
 const fs = require('fs');
 const UpYun = require('upyun');
 
+const {
+    UPYUN_BUCKET_NAME,
+    UPYUN_OPERATOR_NAME,
+    UPYUN_OPERATOR_PWD,
+    LOCAL_PATH,
+    UPYUN_PATH
+} = require('./config');
+
 // 无水印壁纸接口
 const options_1 = {
     method: 'GET',
@@ -29,16 +37,11 @@ const options_2 = {
 const bing_image = {
     url: null,
     filename: null,
-    local_path: null,
-    upyun_path: null,
     data: null,
     content: null
 };
 
 const upyun_config = {
-    bucket_name: null,
-    operator_name: null,
-    operator_pwd: null,
     upyun: null
 };
 
@@ -60,12 +63,7 @@ exports.crawl = function (callback) {
         if (!request_err) {
             bing_image.url = request_result.img.url;
             bing_image.filename = request_result.img.fullstartdate + '.jpg';
-            bing_image.local_path = request_result.config.local_path;
-            bing_image.upyun_path = request_result.config.upyun_path;
             bing_image.content = request_result.text.para1;
-            upyun_config.bucket_name = request_result.config.upyun_bucket_name;
-            upyun_config.operator_name = request_result.config.upyun_operator_name;
-            upyun_config.operator_pwd = request_result.config.upyun_operator_pwd;
             async.parallel({
                 // 下载图片
                 download: function (callback) {
@@ -98,7 +96,7 @@ exports.crawl = function (callback) {
                             }, function (save_err, save_result) {
                                 if (!save_err) {
                                     console.log('UpYun saved.');
-                                    callback(bing_image.local_path, bing_image.filename, bing_image.content);
+                                    callback(LOCAL_PATH, bing_image.filename, bing_image.content);
                                 }
                             });
                         }
@@ -174,9 +172,9 @@ function downloadImage(callback) {
 
 // 准备本地文件夹
 function initLocalDir(callback) {
-    fs.exists(__dirname + bing_image.local_path, function (exist) {
+    fs.exists(__dirname + LOCAL_PATH, function (exist) {
         if (!exist) {
-            fs.mkdir(__dirname + bing_image.local_path, function (mkdir_err, mkdir_result) {
+            fs.mkdir(__dirname + LOCAL_PATH, function (mkdir_err, mkdir_result) {
                 if (!mkdir_err) {
                     callback(null, mkdir_result);
                 }
@@ -190,7 +188,7 @@ function initLocalDir(callback) {
 // 保存文件到本地
 function localSave(callback) {
     fs.writeFile(
-        __dirname + bing_image.local_path + bing_image.filename,
+        __dirname + LOCAL_PATH + bing_image.filename,
         bing_image.data,
         'binary',
         function (fs_err) {
@@ -204,17 +202,17 @@ function localSave(callback) {
 // 准备又拍云
 function upyunInit(callback) {
     const upyun = new UpYun(
-        upyun_config.bucket_name,
-        upyun_config.operator_name,
-        upyun_config.operator_pwd,
+        UPYUN_BUCKET_NAME,
+        UPYUN_OPERATOR_NAME,
+        UPYUN_OPERATOR_PWD,
         'v0.api.upyun.com', {
             apiVersion: 'v2'
         }
     );
-    upyun.headFile(upyun_config.upyun_path, function (file_err, file_result) {
+    upyun.headFile(UPYUN_PATH, function (file_err, file_result) {
         if (!file_err) {
             if (file_result.statusCode === 404) {
-                upyun.makeDir(upyun_config.upyun_path, function (make_dir_err, make_dir_result) {
+                upyun.makeDir(UPYUN_PATH, function (make_dir_err, make_dir_result) {
                     if (!make_dir_err) {
                         callback(null, upyun)
                     }
@@ -231,8 +229,8 @@ function upyunInit(callback) {
 // 保存文件至又拍云
 function upyunPutFile(callback) {
     upyun_config.upyun.putFile(
-        bing_image.upyun_path + bing_image.filename,
-        __dirname + bing_image.local_path + bing_image.filename,
+        UPYUN_PATH + bing_image.filename,
+        __dirname + LOCAL_PATH + bing_image.filename,
         'image/jpg',
         0,
         null,
@@ -243,4 +241,3 @@ function upyunPutFile(callback) {
         }
     );
 }
-

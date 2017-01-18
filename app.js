@@ -9,7 +9,7 @@ const {
     CONSUMER_SECRET,
     OAUTH_TOKEN,
     OAUTH_TOKEN_SECRET
-} = JSON.parse(fs.readFileSync(__dirname + '/config.json', 'utf-8'));
+} = require('./config')
 
 const oauth = new OAuth(
     'http://api.fanfou.com/oauth/request_token',
