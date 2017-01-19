@@ -8,8 +8,8 @@ const {
     CONSUMER_KEY,
     CONSUMER_SECRET,
     OAUTH_TOKEN,
-    OAUTH_TOKEN_SECRET
-} = require('./config')
+    OAUTH_TOKEN_SECRET,
+} = require('./config');
 
 const oauth = new OAuth(
     'http://api.fanfou.com/oauth/request_token',

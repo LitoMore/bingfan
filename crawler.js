@@ -11,7 +11,8 @@ const {
     UPYUN_OPERATOR_NAME,
     UPYUN_OPERATOR_PWD,
     LOCAL_PATH,
-    UPYUN_PATH
+    UPYUN_PATH,
+    UPYUN_DOMAIN,
 } = require('./config');
 
 // 无水印壁纸接口
@@ -63,7 +64,7 @@ exports.crawl = function (callback) {
         if (!request_err) {
             bing_image.url = request_result.img.url;
             bing_image.filename = request_result.img.fullstartdate + '.jpg';
-            bing_image.content = request_result.text.para1;
+            bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + UPYUN_DOMAIN + UPYUN_PATH + bing_image.filename;
             async.parallel({
                 // 下载图片
                 download: function (callback) {
