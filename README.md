@@ -22,11 +22,14 @@ Config your UpYun account in `config.json`
 
 ```
 {
+  "LOCAL_PATH": "/images/",
+
   "UPYUN_BUCKET_NAME": "bucket_name",
   "UPYUN_OPERATOR_NAME": "operator_name",
   "UPYUN_OPERATOR_PWD": "operator_pwd",
-  "LOCAL_PATH": "/images/",
   "UPYUN_PATH": "/node_images/",
+  "UPYUN_DOMAIN": "http://bucket_name.b0.upaiyun.com",
+
   "CONSUMER_KEY": "",
   "CONSUMER_SECRET": "",
   "OAUTH_TOKEN": "",
