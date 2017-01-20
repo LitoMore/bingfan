@@ -4,15 +4,14 @@ const http = require('http');
 const qs = require('querystring');
 const async = require('async');
 const fs = require('fs');
-const UpYun = require('upyun');
+const MSS = require('mss-sdk');
 
 const {
-    UPYUN_BUCKET_NAME,
-    UPYUN_OPERATOR_NAME,
-    UPYUN_OPERATOR_PWD,
     LOCAL_PATH,
-    UPYUN_PATH,
-    UPYUN_DOMAIN,
+    MSS_ACCESS_KEY,
+    MSS_SECRET_KEY,
+    MSS_BUCKET,
+    MSS_DOMAIN,
 } = require('./config');
 
 // 无水印壁纸接口
@@ -42,8 +41,8 @@ const bing_image = {
     content: null
 };
 
-const upyun_config = {
-    upyun: null
+const mss_config = {
+    s3: null
 };
 
 exports.crawl = function (callback) {
@@ -64,7 +63,7 @@ exports.crawl = function (callback) {
         if (!request_err) {
             bing_image.url = request_result.img.url;
             bing_image.filename = request_result.img.fullstartdate + '.jpg';
-            bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + UPYUN_DOMAIN + UPYUN_PATH + bing_image.filename;
+            bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.filename;
             async.parallel({
                 // 下载图片
                 download: function (callback) {
@@ -82,21 +81,20 @@ exports.crawl = function (callback) {
                         save: function (callback) {
                             localSave(callback);
                         },
-                        // 准备又拍云
-                        upyun_init: function (callback) {
-                            upyunInit(callback);
+                        // 准备美团云
+                        mss_init: function (callback) {
+                            mssInit(callback);
                         }
                     }, function (save_err, save_result) {
                         if (!save_err) {
-                            upyun_config.upyun = save_result.upyun_init;
+                            mss_config.s3 = save_result.mss_init;
                             async.parallel({
-                                // 保存图片至又拍云
-                                put: function (callback) {
-                                    upyunPutFile(callback);
+                                mssPut: function (callback) {
+                                    mssPutFile(callback);
                                 }
                             }, function (save_err, save_result) {
                                 if (!save_err) {
-                                    console.log('UpYun saved.');
+                                    console.log('Done!');
                                     callback(LOCAL_PATH, bing_image.filename, bing_image.content);
                                 }
                             });
@@ -200,45 +198,26 @@ function localSave(callback) {
     );
 }
 
-// 准备又拍云
-function upyunInit(callback) {
-    const upyun = new UpYun(
-        UPYUN_BUCKET_NAME,
-        UPYUN_OPERATOR_NAME,
-        UPYUN_OPERATOR_PWD,
-        'v0.api.upyun.com', {
-            apiVersion: 'v2'
-        }
-    );
-    upyun.headFile(UPYUN_PATH, function (file_err, file_result) {
-        if (!file_err) {
-            if (file_result.statusCode === 404) {
-                upyun.makeDir(UPYUN_PATH, function (make_dir_err, make_dir_result) {
-                    if (!make_dir_err) {
-                        callback(null, upyun)
-                    }
-                });
-            } else if (file_result.statusCode === 200) {
-                callback(null, upyun)
-            } else {
-                console.log('Unexpected status code ' + file_result.statusCode);
-            }
-        }
+// 准备美团云
+function mssInit(callback) {
+    const s3 = new MSS.S3({
+        accessKeyId: MSS_ACCESS_KEY,
+        secretAccessKey: MSS_SECRET_KEY,
     });
+    callback(null, s3);
 }
 
-// 保存文件至又拍云
-function upyunPutFile(callback) {
-    upyun_config.upyun.putFile(
-        UPYUN_PATH + bing_image.filename,
-        __dirname + LOCAL_PATH + bing_image.filename,
-        'image/jpg',
-        0,
-        null,
-        function (put_err, put_result) {
-            if (!put_err) {
-                callback(null, put_result);
-            }
+// 保存文件至美团云
+function mssPutFile(callback) {
+    const fileBuffer = fs.readFileSync(__dirname + LOCAL_PATH + bing_image.filename);
+    mss_config.s3.putObject({
+        Bucket: MSS_BUCKET,
+        Key: bing_image.filename,
+        Body: fileBuffer
+    }, function (err, ret) {
+        if (!err) {
+            console.log('Meituan saved.');
+            callback(null, ret);
         }
-    );
+    });
 }
