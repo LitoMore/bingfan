@@ -5,6 +5,7 @@ const qs = require('querystring');
 const async = require('async');
 const fs = require('fs');
 const MSS = require('mss-sdk');
+const crypto = require('crypto');
 
 const {
     LOCAL_PATH,
@@ -38,7 +39,8 @@ const bing_image = {
     url: null,
     filename: null,
     data: null,
-    content: null
+    content: null,
+    md5: null,
 };
 
 const mss_config = {
@@ -63,7 +65,6 @@ exports.crawl = function (callback) {
         if (!request_err) {
             bing_image.url = request_result.img.url;
             bing_image.filename = request_result.img.fullstartdate + '.jpg';
-            bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.filename;
             async.parallel({
                 // 下载图片
                 download: function (callback) {
@@ -88,6 +89,8 @@ exports.crawl = function (callback) {
                     }, function (save_err, save_result) {
                         if (!save_err) {
                             mss_config.s3 = save_result.mss_init;
+                            bing_image.md5 = save_result.save;
+                            bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.md5 + '.jpg';
                             async.parallel({
                                 mssPut: function (callback) {
                                     mssPutFile(callback);
@@ -192,7 +195,13 @@ function localSave(callback) {
         'binary',
         function (fs_err) {
             if (!fs_err) {
-                callback(null, 'Saved!');
+                // 取得文件 MD5 值
+                const rs = fs.createReadStream(__dirname + LOCAL_PATH + bing_image.filename);
+                const hash = crypto.createHash('md5');
+                rs.on('data', hash.update.bind(hash));
+                rs.on('end', function () {
+                    callback(null, hash.digest('hex'));
+                });
             }
         }
     );
@@ -212,7 +221,7 @@ function mssPutFile(callback) {
     const fileBuffer = fs.readFileSync(__dirname + LOCAL_PATH + bing_image.filename);
     mss_config.s3.putObject({
         Bucket: MSS_BUCKET,
-        Key: bing_image.filename,
+        Key: bing_image.md5 + '.jpg',
         Body: fileBuffer
     }, function (err, ret) {
         if (!err) {
