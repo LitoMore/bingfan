@@ -32,8 +32,18 @@ function uploadImage(path, filename, text) {
         oauth_nonce: oauth._getNonce(6),
         oauth_version: '1.0',
     };
-    const signature = oAuthSignature.generate(method, url, params, CONSUMER_SECRET, OAUTH_TOKEN_SECRET, {encodeSignature: false});
-    const authorizationHeader = oauth._buildAuthorizationHeaders(oauth._sortRequestParams(oauth._makeArrayOfArgumentsHash(params)).concat([['oauth_signature', signature]]));
+    const signature = oAuthSignature.generate(
+        method,
+        url,
+        params,
+        CONSUMER_SECRET,
+        OAUTH_TOKEN_SECRET,
+        {encodeSignature: false}
+    );
+    const authorizationHeader = oauth._buildAuthorizationHeaders(
+        oauth._sortRequestParams(oauth._makeArrayOfArgumentsHash(params))
+            .concat([['oauth_signature', signature]])
+    );
     const formData = {
         photo: fs.createReadStream(__dirname + path + filename),
         status: text,
