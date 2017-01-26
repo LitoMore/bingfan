@@ -222,7 +222,8 @@ function mssPutFile(callback) {
     mss_config.s3.putObject({
         Bucket: MSS_BUCKET,
         Key: bing_image.md5 + '.jpg',
-        Body: fileBuffer
+        Body: fileBuffer,
+        ContentType: 'image/jpeg',
     }, function (err, ret) {
         if (!err) {
             console.log('Meituan saved.');
