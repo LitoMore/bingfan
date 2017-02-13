@@ -53,12 +53,12 @@ function uploadImage(path, filename, text) {
         url,
         formData,
         headers: {Authorization: authorizationHeader},
-    }, function (err, httpResponse, body) {
+    }, (err, httpResponse, body) => {
         if (err || httpResponse.statusCode !== 200) console.error('Upload failed:', err, body);
         else console.log('Upload successful!', body)
     });
 }
 
-crawler.crawl(function (path, filename, text) {
+crawler.crawl((path, filename, text) => {
     uploadImage(path, filename, text);
 });

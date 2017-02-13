@@ -47,55 +47,55 @@ const mss_config = {
     s3: null
 };
 
-exports.crawl = function (callback) {
+exports.crawl = (callback) => {
     async.parallel({
         // 请求壁纸接口
-        img: function (callback) {
+        img: (callback) => {
             getImg(callback);
         },
         // 请求简介接口
-        text: function (callback) {
+        text: (callback) => {
             getText(callback);
         },
         // 读取配置
-        config: function (callback) {
+        config: (callback) => {
             getConfig(callback);
         }
-    }, function (request_err, request_result) {
+    }, (request_err, request_result) => {
         if (!request_err) {
             bing_image.url = request_result.img.url;
             bing_image.filename = request_result.img.fullstartdate + '.jpg';
             async.parallel({
                 // 下载图片
-                download: function (callback) {
+                download: (callback) => {
                     downloadImage(callback);
                 },
                 // 准备本地文件夹
-                local_dir: function (callback) {
+                local_dir: (callback) => {
                     initLocalDir(callback);
                 }
-            }, function (crawler_err, crawler_result) {
+            }, (crawler_err, crawler_result) => {
                 bing_image.data = crawler_result.download;
                 if (!crawler_err) {
                     async.parallel({
                         // 保存文件到本地
-                        save: function (callback) {
+                        save: (callback) => {
                             localSave(callback);
                         },
                         // 准备美团云
-                        mss_init: function (callback) {
+                        mss_init: (callback) => {
                             mssInit(callback);
                         }
-                    }, function (save_err, save_result) {
+                    }, (save_err, save_result) => {
                         if (!save_err) {
                             mss_config.s3 = save_result.mss_init;
                             bing_image.md5 = save_result.save;
                             bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.md5 + '.jpg';
                             async.parallel({
-                                mssPut: function (callback) {
+                                mssPut: (callback) => {
                                     mssPutFile(callback);
                                 }
-                            }, function (save_err, save_result) {
+                            }, (save_err, save_result) => {
                                 if (!save_err) {
                                     console.log('Done!');
                                     callback(LOCAL_PATH, bing_image.filename, bing_image.content);
@@ -111,39 +111,39 @@ exports.crawl = function (callback) {
 
 // 获取图片
 function getImg(callback) {
-    http.request(options_1, function (res) {
+    http.request(options_1, (res) => {
         let data = '';
         res.setEncoding('utf8');
-        res.on('data', function (chunk) {
+        res.on('data', (chunk) => {
             data += chunk;
         });
-        res.on('end', function () {
+        res.on('end', () => {
             callback(null, JSON.parse(data).images[0]);
         });
-    }).on('error', function (e) {
+    }).on('error', (e) => {
         console.log('Error: ' + e.message);
     }).end();
 }
 
 // 获取简介
 function getText(callback) {
-    http.request(options_2, function (res) {
+    http.request(options_2, (res) => {
         let data = '';
         res.setEncoding('utf8');
-        res.on('data', function (chunk) {
+        res.on('data', (chunk) => {
             data += chunk;
         });
-        res.on('end', function () {
+        res.on('end', () => {
             callback(null, JSON.parse(data));
         });
-    }).on('error', function (e) {
+    }).on('error', (e) => {
         console.log('Error: ' + e.message);
     }).end();
 }
 
 // 获取配置
 function getConfig(callback) {
-    fs.readFile(__dirname + '/config.json', 'utf-8', function (read_err, read_result) {
+    fs.readFile(__dirname + '/config.json', 'utf-8', (read_err, read_result) => {
         if (!read_err) {
             callback(null, JSON.parse(read_result));
         }
@@ -158,25 +158,25 @@ function downloadImage(callback) {
         port: 80,
         path: bing_image.url
     };
-    http.request(download_option, function (res) {
+    http.request(download_option, (res) => {
         let data = '';
         res.setEncoding('binary');
-        res.on('data', function (chunk) {
+        res.on('data', (chunk) => {
             data += chunk;
         });
-        res.on('end', function () {
+        res.on('end', () => {
             callback(null, data);
         });
-    }).on('error', function (e) {
+    }).on('error', (e) => {
         console.log('Error: ' + e.message);
     }).end();
 }
 
 // 准备本地文件夹
 function initLocalDir(callback) {
-    fs.exists(__dirname + LOCAL_PATH, function (exist) {
+    fs.exists(__dirname + LOCAL_PATH, (exist) => {
         if (!exist) {
-            fs.mkdir(__dirname + LOCAL_PATH, function (mkdir_err, mkdir_result) {
+            fs.mkdir(__dirname + LOCAL_PATH, (mkdir_err, mkdir_result) => {
                 if (!mkdir_err) {
                     callback(null, mkdir_result);
                 }
@@ -193,13 +193,13 @@ function localSave(callback) {
         __dirname + LOCAL_PATH + bing_image.filename,
         bing_image.data,
         'binary',
-        function (fs_err) {
+        (fs_err) => {
             if (!fs_err) {
                 // 取得文件 MD5 值
                 const rs = fs.createReadStream(__dirname + LOCAL_PATH + bing_image.filename);
                 const hash = crypto.createHash('md5');
                 rs.on('data', hash.update.bind(hash));
-                rs.on('end', function () {
+                rs.on('end', () => {
                     callback(null, hash.digest('hex'));
                 });
             }
@@ -224,7 +224,7 @@ function mssPutFile(callback) {
         Key: bing_image.md5 + '.jpg',
         Body: fileBuffer,
         ContentType: 'image/jpeg',
-    }, function (err, ret) {
+    }, (err, ret) => {
         if (!err) {
             console.log('Meituan saved.');
             callback(null, ret);
