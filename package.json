@@ -19,9 +19,8 @@
   "dependencies": {
     "async": "^2.1.4",
     "crypto": "0.0.3",
+    "fanfou-sdk": "^1.0.3",
     "mss-sdk": "^2.0.0",
-    "oauth": "^0.9.15",
-    "oauth-signature": "^1.3.1",
     "request": "^2.79.0"
   }
 }
