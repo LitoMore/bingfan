@@ -8,226 +8,226 @@ const MSS = require('mss-sdk');
 const crypto = require('crypto');
 
 const {
-    LOCAL_PATH,
-    MSS_ACCESS_KEY,
-    MSS_SECRET_KEY,
-    MSS_BUCKET,
-    MSS_DOMAIN,
+  LOCAL_PATH,
+  MSS_ACCESS_KEY,
+  MSS_SECRET_KEY,
+  MSS_BUCKET,
+  MSS_DOMAIN,
 } = require('./config');
 
 // 无水印壁纸接口
 const options_1 = {
-    method: 'GET',
-    hostname: 'cn.bing.com',
-    port: 80,
-    path: '/HPImageArchive.aspx?' + qs.stringify({
-        format: 'js',
-        idx: 0,
-        n: 1
-    })
+  method: 'GET',
+  hostname: 'cn.bing.com',
+  port: 80,
+  path: '/HPImageArchive.aspx?' + qs.stringify({
+    format: 'js',
+    idx: 0,
+    n: 1
+  })
 };
 
 // 带壁纸简介的接口
 const options_2 = {
-    method: 'GET',
-    hostname: 'cn.bing.com',
-    port: 80,
-    path: '/cnhp/coverstory/'
+  method: 'GET',
+  hostname: 'cn.bing.com',
+  port: 80,
+  path: '/cnhp/coverstory/'
 };
 
 const bing_image = {
-    url: null,
-    filename: null,
-    data: null,
-    content: null,
-    md5: null,
+  url: null,
+  filename: null,
+  data: null,
+  content: null,
+  md5: null,
 };
 
 const mss_config = {
-    s3: null
+  s3: null
 };
 
 exports.crawl = (callback) => {
-    async.parallel({
-        // 请求壁纸接口
-        img: (callback) => {
-            getImg(callback);
+  async.parallel({
+    // 请求壁纸接口
+    img: (callback) => {
+      getImg(callback);
+    },
+    // 请求简介接口
+    text: (callback) => {
+      getText(callback);
+    },
+    // 读取配置
+    config: (callback) => {
+      getConfig(callback);
+    }
+  }, (request_err, request_result) => {
+    if (!request_err) {
+      bing_image.url = request_result.img.url;
+      bing_image.filename = request_result.img.fullstartdate + '.jpg';
+      async.parallel({
+        // 下载图片
+        download: (callback) => {
+          downloadImage(callback);
         },
-        // 请求简介接口
-        text: (callback) => {
-            getText(callback);
-        },
-        // 读取配置
-        config: (callback) => {
-            getConfig(callback);
+        // 准备本地文件夹
+        local_dir: (callback) => {
+          initLocalDir(callback);
         }
-    }, (request_err, request_result) => {
-        if (!request_err) {
-            bing_image.url = request_result.img.url;
-            bing_image.filename = request_result.img.fullstartdate + '.jpg';
-            async.parallel({
-                // 下载图片
-                download: (callback) => {
-                    downloadImage(callback);
-                },
-                // 准备本地文件夹
-                local_dir: (callback) => {
-                    initLocalDir(callback);
+      }, (crawler_err, crawler_result) => {
+        bing_image.data = crawler_result.download;
+        if (!crawler_err) {
+          async.parallel({
+            // 保存文件到本地
+            save: (callback) => {
+              localSave(callback);
+            },
+            // 准备美团云
+            mss_init: (callback) => {
+              mssInit(callback);
+            }
+          }, (save_err, save_result) => {
+            if (!save_err) {
+              mss_config.s3 = save_result.mss_init;
+              bing_image.md5 = save_result.save;
+              bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.md5 + '.jpg';
+              async.parallel({
+                mssPut: (callback) => {
+                  mssPutFile(callback);
                 }
-            }, (crawler_err, crawler_result) => {
-                bing_image.data = crawler_result.download;
-                if (!crawler_err) {
-                    async.parallel({
-                        // 保存文件到本地
-                        save: (callback) => {
-                            localSave(callback);
-                        },
-                        // 准备美团云
-                        mss_init: (callback) => {
-                            mssInit(callback);
-                        }
-                    }, (save_err, save_result) => {
-                        if (!save_err) {
-                            mss_config.s3 = save_result.mss_init;
-                            bing_image.md5 = save_result.save;
-                            bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.md5 + '.jpg';
-                            async.parallel({
-                                mssPut: (callback) => {
-                                    mssPutFile(callback);
-                                }
-                            }, (save_err, save_result) => {
-                                if (!save_err) {
-                                    console.log('Done!');
-                                    callback(LOCAL_PATH, bing_image.filename, bing_image.content);
-                                }
-                            });
-                        }
-                    });
+              }, (save_err, save_result) => {
+                if (!save_err) {
+                  console.log('Done!');
+                  callback(LOCAL_PATH, bing_image.filename, bing_image.content);
                 }
-            });
+              });
+            }
+          });
         }
-    });
+      });
+    }
+  });
 };
 
 // 获取图片
 function getImg(callback) {
-    http.request(options_1, (res) => {
-        let data = '';
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-            data += chunk;
-        });
-        res.on('end', () => {
-            callback(null, JSON.parse(data).images[0]);
-        });
-    }).on('error', (e) => {
-        console.log('Error: ' + e.message);
-    }).end();
+  http.request(options_1, (res) => {
+    let data = '';
+    res.setEncoding('utf8');
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      callback(null, JSON.parse(data).images[0]);
+    });
+  }).on('error', (e) => {
+    console.log('Error: ' + e.message);
+  }).end();
 }
 
 // 获取简介
 function getText(callback) {
-    http.request(options_2, (res) => {
-        let data = '';
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-            data += chunk;
-        });
-        res.on('end', () => {
-            callback(null, JSON.parse(data));
-        });
-    }).on('error', (e) => {
-        console.log('Error: ' + e.message);
-    }).end();
+  http.request(options_2, (res) => {
+    let data = '';
+    res.setEncoding('utf8');
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      callback(null, JSON.parse(data));
+    });
+  }).on('error', (e) => {
+    console.log('Error: ' + e.message);
+  }).end();
 }
 
 // 获取配置
 function getConfig(callback) {
-    fs.readFile(__dirname + '/config.json', 'utf-8', (read_err, read_result) => {
-        if (!read_err) {
-            callback(null, JSON.parse(read_result));
-        }
-    });
+  fs.readFile(__dirname + '/config.json', 'utf-8', (read_err, read_result) => {
+    if (!read_err) {
+      callback(null, JSON.parse(read_result));
+    }
+  });
 }
 
 // 下载图片
 function downloadImage(callback) {
-    const download_option = {
-        method: 'GET',
-        hostname: 'cn.bing.com',
-        port: 80,
-        path: bing_image.url
-    };
-    http.request(download_option, (res) => {
-        let data = '';
-        res.setEncoding('binary');
-        res.on('data', (chunk) => {
-            data += chunk;
-        });
-        res.on('end', () => {
-            callback(null, data);
-        });
-    }).on('error', (e) => {
-        console.log('Error: ' + e.message);
-    }).end();
+  const download_option = {
+    method: 'GET',
+    hostname: 'cn.bing.com',
+    port: 80,
+    path: bing_image.url
+  };
+  http.request(download_option, (res) => {
+    let data = '';
+    res.setEncoding('binary');
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      callback(null, data);
+    });
+  }).on('error', (e) => {
+    console.log('Error: ' + e.message);
+  }).end();
 }
 
 // 准备本地文件夹
 function initLocalDir(callback) {
-    fs.exists(__dirname + LOCAL_PATH, (exist) => {
-        if (!exist) {
-            fs.mkdir(__dirname + LOCAL_PATH, (mkdir_err, mkdir_result) => {
-                if (!mkdir_err) {
-                    callback(null, mkdir_result);
-                }
-            });
-        } else {
-            callback(null, exist);
+  fs.exists(__dirname + LOCAL_PATH, (exist) => {
+    if (!exist) {
+      fs.mkdir(__dirname + LOCAL_PATH, (mkdir_err, mkdir_result) => {
+        if (!mkdir_err) {
+          callback(null, mkdir_result);
         }
-    });
+      });
+    } else {
+      callback(null, exist);
+    }
+  });
 }
 
 // 保存文件到本地
 function localSave(callback) {
-    fs.writeFile(
-        __dirname + LOCAL_PATH + bing_image.filename,
-        bing_image.data,
-        'binary',
-        (fs_err) => {
-            if (!fs_err) {
-                // 取得文件 MD5 值
-                const rs = fs.createReadStream(__dirname + LOCAL_PATH + bing_image.filename);
-                const hash = crypto.createHash('md5');
-                rs.on('data', hash.update.bind(hash));
-                rs.on('end', () => {
-                    callback(null, hash.digest('hex'));
-                });
-            }
-        }
-    );
+  fs.writeFile(
+    __dirname + LOCAL_PATH + bing_image.filename,
+    bing_image.data,
+    'binary',
+    (fs_err) => {
+      if (!fs_err) {
+        // 取得文件 MD5 值
+        const rs = fs.createReadStream(__dirname + LOCAL_PATH + bing_image.filename);
+        const hash = crypto.createHash('md5');
+        rs.on('data', hash.update.bind(hash));
+        rs.on('end', () => {
+          callback(null, hash.digest('hex'));
+        });
+      }
+    }
+  );
 }
 
 // 准备美团云
 function mssInit(callback) {
-    const s3 = new MSS.S3({
-        accessKeyId: MSS_ACCESS_KEY,
-        secretAccessKey: MSS_SECRET_KEY,
-    });
-    callback(null, s3);
+  const s3 = new MSS.S3({
+    accessKeyId: MSS_ACCESS_KEY,
+    secretAccessKey: MSS_SECRET_KEY,
+  });
+  callback(null, s3);
 }
 
 // 保存文件至美团云
 function mssPutFile(callback) {
-    const fileBuffer = fs.readFileSync(__dirname + LOCAL_PATH + bing_image.filename);
-    mss_config.s3.putObject({
-        Bucket: MSS_BUCKET,
-        Key: bing_image.md5 + '.jpg',
-        Body: fileBuffer,
-        ContentType: 'image/jpeg',
-    }, (err, ret) => {
-        if (!err) {
-            console.log('Meituan saved.');
-            callback(null, ret);
-        }
-    });
+  const fileBuffer = fs.readFileSync(__dirname + LOCAL_PATH + bing_image.filename);
+  mss_config.s3.putObject({
+    Bucket: MSS_BUCKET,
+    Key: bing_image.md5 + '.jpg',
+    Body: fileBuffer,
+    ContentType: 'image/jpeg',
+  }, (err, ret) => {
+    if (!err) {
+      console.log('Meituan saved.');
+      callback(null, ret);
+    }
+  });
 }
