@@ -221,6 +221,16 @@ function mssPutFile(callback) {
   const fileBuffer = fs.readFileSync(__dirname + LOCAL_PATH + bing_image.filename);
   mss_config.s3.putObject({
     Bucket: MSS_BUCKET,
+    Key: 'today.jpg',
+    Body: fileBuffer,
+    ContentType: 'image/jpeg',
+  }, (err, ret) => {
+    if (!err) {
+      console.log('Meituan today saved.');
+    }
+  });
+  mss_config.s3.putObject({
+    Bucket: MSS_BUCKET,
     Key: bing_image.md5 + '.jpg',
     Body: fileBuffer,
     ContentType: 'image/jpeg',
