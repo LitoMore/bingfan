@@ -9,12 +9,13 @@ const {
   OAUTH_TOKEN_SECRET,
 } = require('./config');
 
-const ff = new Fanfou(
-  CONSUMER_KEY,
-  CONSUMER_SECRET,
-  OAUTH_TOKEN,
-  OAUTH_TOKEN_SECRET
-);
+const ff = new Fanfou({
+  auth_type: 'oauth',
+  consumer_key: CONSUMER_KEY,
+  consumer_secret: CONSUMER_SECRET,
+  oauth_token: OAUTH_TOKEN,
+  oauth_token_secret: OAUTH_TOKEN_SECRET,
+});
 
 function uploadImage(path, filename, text) {
   ff.upload(__dirname + path + filename, text, (e, res) => {
