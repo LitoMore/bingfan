@@ -18,9 +18,9 @@ const ff = new Fanfou({
 });
 
 function uploadImage(path, filename, text) {
-  ff.upload(fs.createReadStream(__dirname + path + filename), text, (e, res) => {
+  ff.upload(fs.createReadStream(__dirname + path + filename), text, (e, status, rawData) => {
     if (e) console.error(e);
-    else console.log(res);
+    else console.log(rawData);
   });
 }
 

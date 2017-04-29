@@ -19,7 +19,7 @@
   "dependencies": {
     "async": "^2.1.4",
     "crypto": "0.0.3",
-    "fanfou-sdk": "^2.0.2",
+    "fanfou-sdk": "^2.1.0",
     "mss-sdk": "^2.0.0",
     "request": "^2.79.0"
   }
