@@ -15,6 +15,8 @@ const ff = new Fanfou({
   consumer_secret: CONSUMER_SECRET,
   oauth_token: OAUTH_TOKEN,
   oauth_token_secret: OAUTH_TOKEN_SECRET,
+  protocol: 'https:',
+  fakeHttps: true
 });
 
 function uploadImage(path, filename, text) {
