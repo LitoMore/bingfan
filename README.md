@@ -42,6 +42,11 @@ Run `app.js`
 $ node app.js
 ```
 
+## Related
+
+- [fanfou-sdk](https://github.com/LitoMore/fanfou-sdk-node) - Fanfou SDK for Node.js
+- [node-bing-crawler](https://github.com/LitoMore/node-bing-crawler) - Bing wallpaper crawler
+
 ## License
 
 MIT © [LitoMore](https://github.com/LitoMore)
