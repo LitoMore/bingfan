@@ -27,7 +27,7 @@ function uploadImage(path, filename, text) {
   });
 }
 
-schedule.scheduledJob('0 1 * * *', () => {
+schedule.scheduleJob('0 1 * * *', () => {
   crawler.crawl((path, filename, text) => {
     uploadImage(path, filename, text);
   });
