@@ -1,6 +1,7 @@
 const fs = require('fs');
 const Fanfou = require('fanfou-sdk');
 const crawler = require('./crawler');
+const schedule = require('node-schedule');
 
 const {
   CONSUMER_KEY,
@@ -26,6 +27,8 @@ function uploadImage(path, filename, text) {
   });
 }
 
-crawler.crawl((path, filename, text) => {
-  uploadImage(path, filename, text);
-});
+schedule.scheduledJob('0 1 * * *', () => {
+  crawler.crawl((path, filename, text) => {
+    uploadImage(path, filename, text);
+  });
+})
