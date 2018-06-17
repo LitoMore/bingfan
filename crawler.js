@@ -8,11 +8,7 @@ const MSS = require('mss-sdk');
 const crypto = require('crypto');
 
 const {
-  LOCAL_PATH,
-  MSS_ACCESS_KEY,
-  MSS_SECRET_KEY,
-  MSS_BUCKET,
-  MSS_DOMAIN,
+  LOCAL_PATH
 } = require('./config');
 
 // 无水印壁纸接口
@@ -62,45 +58,42 @@ exports.crawl = (callback) => {
       getConfig(callback);
     }
   }, (request_err, request_result) => {
-    if (!request_err) {
+    if (request_err) {
+      console.log(request_err);
+    } else {
+      console.log('Requesting')
       bing_image.url = request_result.img.url;
       bing_image.filename = request_result.img.fullstartdate + '.jpg';
       async.parallel({
         // 下载图片
         download: (callback) => {
+          console.log('Downloading')
           downloadImage(callback);
         },
         // 准备本地文件夹
         local_dir: (callback) => {
+          console.log('Preparing')
           initLocalDir(callback);
         }
       }, (crawler_err, crawler_result) => {
         bing_image.data = crawler_result.download;
-        if (!crawler_err) {
+        if (crawler_err) {
+          console.log(crawler_err)
+        } else {
           async.parallel({
             // 保存文件到本地
             save: (callback) => {
+              console.log('Saving')
               localSave(callback);
             },
-            // 准备美团云
-            mss_init: (callback) => {
-              mssInit(callback);
-            }
           }, (save_err, save_result) => {
-            if (!save_err) {
-              mss_config.s3 = save_result.mss_init;
+            if (save_err) {
+              console.log(save_err)
+            } else {
+              console.log('Naming')
               bing_image.md5 = save_result.save;
-              bing_image.content = request_result.img.copyright.replace(/ \((.+)\)/g, '（$1）') + MSS_DOMAIN + bing_image.md5 + '.jpg';
-              async.parallel({
-                mssPut: (callback) => {
-                  mssPutFile(callback);
-                }
-              }, (save_err, save_result) => {
-                if (!save_err) {
-                  console.log('Done!');
-                  callback(LOCAL_PATH, bing_image.filename, bing_image.content);
-                }
-              });
+              bing_image.content = request_result.img.copyright;
+              callback(LOCAL_PATH, bing_image.filename, bing_image.content);
             }
           });
         }
@@ -200,44 +193,10 @@ function localSave(callback) {
         const hash = crypto.createHash('md5');
         rs.on('data', hash.update.bind(hash));
         rs.on('end', () => {
+          console.log('Save end')
           callback(null, hash.digest('hex'));
         });
       }
     }
   );
-}
-
-// 准备美团云
-function mssInit(callback) {
-  const s3 = new MSS.S3({
-    accessKeyId: MSS_ACCESS_KEY,
-    secretAccessKey: MSS_SECRET_KEY,
-  });
-  callback(null, s3);
-}
-
-// 保存文件至美团云
-function mssPutFile(callback) {
-  const fileBuffer = fs.readFileSync(__dirname + LOCAL_PATH + bing_image.filename);
-  mss_config.s3.putObject({
-    Bucket: MSS_BUCKET,
-    Key: 'today.jpg',
-    Body: fileBuffer,
-    ContentType: 'image/jpeg',
-  }, (err, ret) => {
-    if (!err) {
-      console.log('Meituan today saved.');
-    }
-  });
-  mss_config.s3.putObject({
-    Bucket: MSS_BUCKET,
-    Key: bing_image.md5 + '.jpg',
-    Body: fileBuffer,
-    ContentType: 'image/jpeg',
-  }, (err, ret) => {
-    if (!err) {
-      console.log('Meituan saved.');
-      callback(null, ret);
-    }
-  });
 }

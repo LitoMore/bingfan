@@ -29,6 +29,7 @@ function uploadImage(path, filename, text) {
 
 schedule.scheduleJob('0 1 * * *', () => {
   crawler.crawl((path, filename, text) => {
+    console.log(path, filename, text)
     uploadImage(path, filename, text);
   });
-})
+});
