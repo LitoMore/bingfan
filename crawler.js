@@ -23,14 +23,6 @@ const options_1 = {
   })
 };
 
-// 带壁纸简介的接口
-const options_2 = {
-  method: 'GET',
-  hostname: 'cn.bing.com',
-  port: 80,
-  path: '/cnhp/coverstory/'
-};
-
 const bing_image = {
   url: null,
   filename: null,
@@ -48,10 +40,6 @@ exports.crawl = (callback) => {
     // 请求壁纸接口
     img: (callback) => {
       getImg(callback);
-    },
-    // 请求简介接口
-    text: (callback) => {
-      getText(callback);
     },
     // 读取配置
     config: (callback) => {
@@ -112,22 +100,6 @@ function getImg(callback) {
     });
     res.on('end', () => {
       callback(null, JSON.parse(data).images[0]);
-    });
-  }).on('error', (e) => {
-    console.log('Error: ' + e.message);
-  }).end();
-}
-
-// 获取简介
-function getText(callback) {
-  http.request(options_2, (res) => {
-    let data = '';
-    res.setEncoding('utf8');
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-    res.on('end', () => {
-      callback(null, JSON.parse(data));
     });
   }).on('error', (e) => {
     console.log('Error: ' + e.message);
