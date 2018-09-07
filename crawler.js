@@ -19,7 +19,8 @@ const options_1 = {
   path: '/HPImageArchive.aspx?' + qs.stringify({
     format: 'js',
     idx: 0,
-    n: 1
+    n: 1,
+    mkt: 'zh-CN'
   })
 };
 
