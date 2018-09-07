@@ -23,12 +23,6 @@ Config your MSS account in `config.json`
 ```
 {
   "LOCAL_PATH": "/images/",
-
-  "MSS_ACCESS_KEY": "access_key",
-  "MSS_SECRET_KEY": "secret_key",
-  "MSS_BUCKET": "bucket",
-  "MSS_DOMAIN": "http://your_domain.com/",
-
   "CONSUMER_KEY": "",
   "CONSUMER_SECRET": "",
   "OAUTH_TOKEN": "",
