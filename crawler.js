@@ -11,7 +11,7 @@ const {
   LOCAL_PATH
 } = require('./config');
 
-// 无水印壁纸接口
+// Bing API
 const options_1 = {
   method: 'GET',
   hostname: 'cn.bing.com',
@@ -38,11 +38,11 @@ const mss_config = {
 
 exports.crawl = (callback) => {
   async.parallel({
-    // 请求壁纸接口
+    // Fetch bing image
     img: (callback) => {
       getImg(callback);
     },
-    // 读取配置
+    // Fetch config
     config: (callback) => {
       getConfig(callback);
     }
@@ -54,12 +54,12 @@ exports.crawl = (callback) => {
       bing_image.url = request_result.img.url;
       bing_image.filename = request_result.img.fullstartdate + '.jpg';
       async.parallel({
-        // 下载图片
+        // Download image
         download: (callback) => {
           console.log('Downloading')
           downloadImage(callback);
         },
-        // 准备本地文件夹
+        // Prepare local dir
         local_dir: (callback) => {
           console.log('Preparing')
           initLocalDir(callback);
@@ -70,7 +70,7 @@ exports.crawl = (callback) => {
           console.log(crawler_err)
         } else {
           async.parallel({
-            // 保存文件到本地
+            // Save file to local
             save: (callback) => {
               console.log('Saving')
               localSave(callback);
@@ -91,7 +91,7 @@ exports.crawl = (callback) => {
   });
 };
 
-// 获取图片
+// Fetch image
 function getImg(callback) {
   http.request(options_1, (res) => {
     let data = '';
@@ -107,7 +107,7 @@ function getImg(callback) {
   }).end();
 }
 
-// 获取配置
+// Fetch config
 function getConfig(callback) {
   fs.readFile(__dirname + '/config.json', 'utf-8', (read_err, read_result) => {
     if (!read_err) {
@@ -116,7 +116,7 @@ function getConfig(callback) {
   });
 }
 
-// 下载图片
+// Download image
 function downloadImage(callback) {
   const download_option = {
     method: 'GET',
@@ -138,7 +138,7 @@ function downloadImage(callback) {
   }).end();
 }
 
-// 准备本地文件夹
+// Prepare local dir
 function initLocalDir(callback) {
   fs.exists(__dirname + LOCAL_PATH, (exist) => {
     if (!exist) {
@@ -153,7 +153,7 @@ function initLocalDir(callback) {
   });
 }
 
-// 保存文件到本地
+// Save file to local
 function localSave(callback) {
   fs.writeFile(
     __dirname + LOCAL_PATH + bing_image.filename,
@@ -161,7 +161,7 @@ function localSave(callback) {
     'binary',
     (fs_err) => {
       if (!fs_err) {
-        // 取得文件 MD5 值
+        // Get file MD5 hash
         const rs = fs.createReadStream(__dirname + LOCAL_PATH + bing_image.filename);
         const hash = crypto.createHash('md5');
         rs.on('data', hash.update.bind(hash));
