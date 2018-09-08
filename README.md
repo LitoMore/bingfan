@@ -1,6 +1,6 @@
 # bingfan
 
-饭否每日壁纸机器人
+Bing-Wallpaper Bot for Fanfou
 
 ## Usage
 
